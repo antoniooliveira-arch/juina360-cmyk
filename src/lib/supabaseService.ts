@@ -32,6 +32,7 @@ const mapPatrocinador = (row: any): Patrocinador => ({
   url: row.url,
   imagemUrl: row.imagem_url,
   ativo: row.ativo,
+  media: row.media ?? [],
 });
 
 const mapUsuario = (row: any): Usuario => ({
@@ -155,7 +156,7 @@ export async function fetchPatrocinadores(opts?: { ativos?: boolean }): Promise<
 
 export async function createPatrocinador(p: Omit<Patrocinador, 'id'>): Promise<Patrocinador> {
   const { data, error } = await supabase
-    .from('patrocinadores').insert({ nome: p.nome, url: p.url, imagem_url: p.imagemUrl, ativo: p.ativo }).select().single();
+    .from('patrocinadores').insert({ nome: p.nome, url: p.url, imagem_url: p.imagemUrl, ativo: p.ativo, media: p.media ?? [] }).select().single();
   if (error) throw error;
   return mapPatrocinador(data);
 }
@@ -166,6 +167,7 @@ export async function updatePatrocinador(id: string, data: Partial<Patrocinador>
   if (data.url !== undefined) updates.url = data.url;
   if (data.imagemUrl !== undefined) updates.imagem_url = data.imagemUrl;
   if (data.ativo !== undefined) updates.ativo = data.ativo;
+  if (data.media !== undefined) updates.media = data.media;
   const { error } = await supabase.from('patrocinadores').update(updates).eq('id', id);
   if (error) throw error;
 }

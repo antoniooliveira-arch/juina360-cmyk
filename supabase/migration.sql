@@ -49,9 +49,12 @@ CREATE TABLE IF NOT EXISTS patrocinadores (
   nome VARCHAR(255) NOT NULL,
   url TEXT,
   imagem_url TEXT,
+  media JSONB NOT NULL DEFAULT '[]'::jsonb,
   ativo BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+ALTER TABLE patrocinadores ADD COLUMN IF NOT EXISTS media JSONB NOT NULL DEFAULT '[]'::jsonb;
 
 -- ===================== ÍNDICES =====================
 CREATE INDEX IF NOT EXISTS idx_noticias_status ON noticias(status);

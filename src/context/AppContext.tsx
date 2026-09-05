@@ -39,13 +39,38 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const STORAGE_KEY_PATROCINADORES = 'juina360_patrocinadores';
+
+function lerPatrocinadoresSalvos(): Patrocinador[] {
+  try {
+    const salvo = localStorage.getItem(STORAGE_KEY_PATROCINADORES);
+    if (salvo) {
+      const parsed = JSON.parse(salvo);
+      if (Array.isArray(parsed) && parsed.length) return parsed;
+    }
+  } catch (_) {
+    /* ignore */
+  }
+  return initialPatrocinadores;
+}
+
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [categorias, setCategorias] = useState<Categoria[]>(initialCategorias);
   const [noticias, setNoticias] = useState<Noticia[]>(initialNoticias);
-  const [patrocinadores, setPatrocinadores] = useState<Patrocinador[]>(initialPatrocinadores);
+  const [patrocinadores, setPatrocinadores] = useState<Patrocinador[]>(lerPatrocinadoresSalvos);
   const [usuarios, setUsuarios] = useState<Usuario[]>(initialUsuarios);
   const [currentUser, setCurrentUser] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    try {
+      if (!api.supabaseDisponivel) {
+        localStorage.setItem(STORAGE_KEY_PATROCINADORES, JSON.stringify(patrocinadores));
+      }
+    } catch (_) {
+      /* espaço insuficiente */
+    }
+  }, [patrocinadores]);
 
   useEffect(() => {
     async function load() {

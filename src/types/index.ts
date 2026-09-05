@@ -36,10 +36,21 @@ export interface Noticia {
   dataPublicacao?: Date;
 }
 
+export type TipoMedia = 'imagem' | 'video' | 'audio';
+
+export interface PatrocinadorMedia {
+  id: string;
+  tipo: TipoMedia;
+  nome: string;
+  url: string;
+  data: Date;
+}
+
 export interface Patrocinador {
   id: string;
   nome: string;
   url?: string;
   imagemUrl?: string;
   ativo: boolean;
+  media?: PatrocinadorMedia[];
 }
