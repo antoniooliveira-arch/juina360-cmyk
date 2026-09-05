@@ -17,8 +17,9 @@ export function Logo({ escuro = false }: { escuro?: boolean }) {
 }
 
 export function Header() {
-  const { categorias, isAuthenticated } = useApp();
+  const { categorias, isAuthenticated, currentUser } = useApp();
   const [open, setOpen] = useState(false);
+  const destinoPainel = currentUser?.perfil === 'patrocinador' ? '/painel' : '/admin';
 
   return (
     <header className="sticky top-0 z-40">
@@ -65,7 +66,7 @@ export function Header() {
           <div className="hidden items-center gap-2 lg:flex">
             {isAuthenticated ? (
               <Link
-                to="/admin"
+                to={destinoPainel}
                 className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:-translate-y-0.5 hover:bg-slate-700 hover:shadow-lg"
               >
                 <LayoutDashboard className="h-4 w-4" /> Painel
@@ -100,7 +101,7 @@ export function Header() {
                 </Link>
               ))}
               <Link
-                to={isAuthenticated ? '/admin' : '/login'}
+                to={isAuthenticated ? destinoPainel : '/login'}
                 onClick={() => setOpen(false)}
                 className="mt-2 flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2.5 text-sm font-semibold text-white"
               >

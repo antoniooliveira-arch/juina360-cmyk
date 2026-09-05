@@ -1,4 +1,4 @@
-export type PerfilUsuario = 'admin' | 'editor' | 'colaborador';
+export type PerfilUsuario = 'admin' | 'editor' | 'colaborador' | 'patrocinador';
 
 export interface Usuario {
   id: string;
@@ -53,4 +53,35 @@ export interface Patrocinador {
   imagemUrl?: string;
   ativo: boolean;
   media?: PatrocinadorMedia[];
+}
+
+export interface Sponsor {
+  id: string;
+  nome: string;
+  email?: string;
+  telefone?: string;
+  whatsapp?: string;
+  logoUrl?: string;
+  ativo: boolean;
+  createdAt?: Date;
+}
+
+export type StatusCampanha = 'rascunho' | 'pendente' | 'aprovado' | 'publicado' | 'recusado' | 'expirado';
+
+export interface Campanha {
+  id: string;
+  sponsorId?: string;
+  titulo: string;
+  descricao?: string;
+  linkUrl?: string;
+  media?: PatrocinadorMedia[];
+  startAt?: Date;
+  endAt?: Date;
+  status: StatusCampanha;
+  recusaMotivo?: string;
+  views: number;
+  cliques: number;
+  sponsorNome?: string;
+  sponsorEmail?: string;
+  createdAt: Date;
 }

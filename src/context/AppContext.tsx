@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
-import type { Usuario, Categoria, Noticia, Patrocinador } from '../types';
+import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
+import type { Usuario, Categoria, Noticia, Patrocinador, Sponsor, Campanha } from '../types';
 import {
   categorias as initialCategorias,
   usuarios as initialUsuarios,
@@ -13,6 +13,9 @@ interface AppContextType {
   noticias: Noticia[];
   patrocinadores: Patrocinador[];
   usuarios: Usuario[];
+  sponsors: Sponsor[];
+  campanhas: Campanha[];
+  campanhasPublicas: Campanha[];
   currentUser: Usuario | null;
   isAuthenticated: boolean;
   loading: boolean;
@@ -31,6 +34,11 @@ interface AppContextType {
   createPatrocinador: (p: Omit<Patrocinador, 'id'>) => Promise<void>;
   updatePatrocinador: (id: string, data: Partial<Patrocinador>) => Promise<void>;
   deletePatrocinador: (id: string) => Promise<void>;
+
+  createSponsor: (s: Omit<Sponsor, 'id'>) => Promise<void>;
+  createCampanha: (c: Omit<Campanha, 'id' | 'views' | 'cliques' | 'createdAt'>) => Promise<void>;
+  updateCampanha: (id: string, data: Partial<Campanha>) => Promise<void>;
+  deleteCampanha: (id: string) => Promise<void>;
 
   createUsuario: (u: Omit<Usuario, 'id'>) => Promise<void>;
   updateUsuario: (id: string, data: Partial<Usuario>) => Promise<void>;
@@ -59,6 +67,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [noticias, setNoticias] = useState<Noticia[]>(initialNoticias);
   const [patrocinadores, setPatrocinadores] = useState<Patrocinador[]>(lerPatrocinadoresSalvos);
   const [usuarios, setUsuarios] = useState<Usuario[]>(initialUsuarios);
+  const [sponsors, setSponsors] = useState<Sponsor[]>([]);
+  const [campanhas, setCampanhas] = useState<Campanha[]>([]);
   const [currentUser, setCurrentUser] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -91,12 +101,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (usrs.length) setUsuarios(usrs);
       } catch (err) {
         console.warn('Supabase indisponível, usando dados mock:', err);
+      }
+      try {
+        const camps = await api.fetchCampanhas();
+        if (camps.length) setCampanhas(camps);
+      } catch (err) {
+        console.warn('Falha ao carregar campanhas:', err);
+      }
+      try {
+        const spons = await api.fetchSponsors();
+        if (spons.length) setSponsors(spons);
+      } catch (err) {
+        console.warn('Falha ao carregar sponsors:', err);
       } finally {
         setLoading(false);
       }
     }
     load();
   }, []);
+
+  const campanhasPublicas = useMemo(() => {
+    const agora = Date.now();
+    return campanhas.filter(c => {
+      if (c.status !== 'publicado') return false;
+      if (c.startAt && new Date(c.startAt).getTime() > agora) return false;
+      if (c.endAt && new Date(c.endAt).getTime() < agora) return false;
+      return true;
+    });
+  }, [campanhas]);
 
   const login = useCallback((email: string, senha: string): boolean => {
     const user = usuarios.find(u => u.email === email && u.senha === senha && u.status === 'ativo');
@@ -218,6 +250,55 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setPatrocinadores(prev => prev.filter(p => p.id !== id));
   }, []);
 
+  const createSponsor = useCallback(async (s: Omit<Sponsor, 'id'>) => {
+    if (api.supabaseDisponivel) {
+      try {
+        const created = await api.createSponsor(s);
+        setSponsors(prev => [...prev, created]);
+        return;
+      } catch (e) {
+        console.warn('Falha ao criar sponsor:', e);
+      }
+    }
+    setSponsors(prev => [...prev, { ...s, id: `sp-${Date.now()}` }]);
+  }, []);
+
+  const createCampanha = useCallback(async (c: Omit<Campanha, 'id' | 'views' | 'cliques' | 'createdAt'>) => {
+    if (api.supabaseDisponivel) {
+      try {
+        const created = await api.createCampanha(c);
+        setCampanhas(prev => [created, ...prev]);
+        return;
+      } catch (e) {
+        console.warn('Falha ao criar campanha:', e);
+      }
+    }
+    const id = `cam-${Date.now()}`;
+    setCampanhas(prev => [{ ...c, id, views: 0, cliques: 0, createdAt: new Date() }, ...prev]);
+  }, []);
+
+  const updateCampanha = useCallback(async (id: string, data: Partial<Campanha>) => {
+    if (api.supabaseDisponivel) {
+      try {
+        await api.updateCampanha(id, data);
+      } catch (e) {
+        console.warn('Falha ao atualizar campanha:', e);
+      }
+    }
+    setCampanhas(prev => prev.map(c => (c.id === id ? { ...c, ...data } : c)));
+  }, []);
+
+  const deleteCampanha = useCallback(async (id: string) => {
+    if (api.supabaseDisponivel) {
+      try {
+        await api.deleteCampanha(id);
+      } catch (e) {
+        console.warn('Falha ao excluir campanha:', e);
+      }
+    }
+    setCampanhas(prev => prev.filter(c => c.id !== id));
+  }, []);
+
   const createUsuario = useCallback(async (u: Omit<Usuario, 'id'>) => {
     if (api.supabaseDisponivel) {
       try {
@@ -259,11 +340,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     <AppContext.Provider
       value={{
         categorias, noticias, patrocinadores, usuarios,
+        sponsors, campanhas, campanhasPublicas,
         currentUser, isAuthenticated: !!currentUser, loading,
         login, logout,
         createNoticia, updateNoticia, deleteNoticia,
         createCategoria, updateCategoria, deleteCategoria,
         createPatrocinador, updatePatrocinador, deletePatrocinador,
+        createSponsor, createCampanha, updateCampanha, deleteCampanha,
         createUsuario, updateUsuario, deleteUsuario,
       }}
     >

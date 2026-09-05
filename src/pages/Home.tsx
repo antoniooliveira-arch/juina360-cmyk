@@ -2,13 +2,14 @@ import { Link } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { NoticiaCard } from '@/components/noticias/NoticiaCard';
 import { PatrocinadoresDestaque } from '@/components/patrocinadores/PatrocinadoresDestaque';
+import { CampanhasBanner } from '@/components/campanhas/CampanhasBanner';
 import { Reveal } from '@/components/Reveal';
 import { Newspaper, Flame } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export function Home() {
-  const { noticias, patrocinadores } = useApp();
+  const { noticias, patrocinadores, campanhasPublicas } = useApp();
   const publicadas = noticias.filter(n => n.status === 'publicado');
   const destaque = publicadas.find(n => n.destaque) ?? publicadas[0];
   const demais = publicadas.filter(n => n.id !== destaque?.id);
@@ -53,7 +54,11 @@ export function Home() {
         </div>
       </div>
 
-      {patrocinadores.length > 0 && <PatrocinadoresDestaque />}
+      {(campanhasPublicas.length > 0 || patrocinadores.length > 0) && (
+        campanhasPublicas.length > 0
+          ? <CampanhasBanner campanhas={campanhasPublicas} />
+          : <PatrocinadoresDestaque />
+      )}
 
       <div className="mx-auto max-w-7xl px-4 py-6">
         {destaque ? (

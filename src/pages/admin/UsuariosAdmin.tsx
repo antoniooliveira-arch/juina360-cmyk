@@ -8,6 +8,7 @@ const perfis: Record<PerfilUsuario, string> = {
   admin: 'Administrador',
   editor: 'Editor',
   colaborador: 'Colaborador',
+  patrocinador: 'Patrocinador',
 };
 
 export function UsuariosAdmin() {

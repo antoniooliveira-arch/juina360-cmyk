@@ -1,8 +1,8 @@
 import React from 'react';
-import { NavLink, useNavigate, Link } from 'react-router-dom';
+import { NavLink, useNavigate, Link, Navigate } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import {
-  LayoutDashboard, Newspaper, Tags, Handshake, Users, LogOut, Globe,
+  LayoutDashboard, Newspaper, Tags, Handshake, Users, LogOut, Globe, Megaphone,
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -11,12 +11,15 @@ const navItens = [
   { to: '/admin/noticias', label: 'Notícias', icon: Newspaper },
   { to: '/admin/categorias', label: 'Categorias', icon: Tags },
   { to: '/admin/patrocinadores', label: 'Patrocinadores', icon: Handshake },
+  { to: '/admin/campanhas', label: 'Campanhas', icon: Megaphone },
   { to: '/admin/usuarios', label: 'Usuários', icon: Users },
 ];
 
 export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, logout } = useApp();
   const navigate = useNavigate();
+
+  if (currentUser?.perfil === 'patrocinador') return <Navigate to="/painel" replace />;
 
   const handleLogout = () => {
     logout();

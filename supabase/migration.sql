@@ -97,7 +97,8 @@ ON CONFLICT (slug) DO NOTHING;
 INSERT INTO usuarios (nome, email, perfil, status, senha) VALUES
   ('Administrador JUINA360', 'admin@juina360.com', 'admin', 'ativo', '123'),
   ('Redator Principal', 'redator@juina360.com', 'editor', 'ativo', '123456'),
-  ('Colaborador', 'colaborador@juina360.com', 'colaborador', 'ativo', '123456')
+  ('Colaborador', 'colaborador@juina360.com', 'colaborador', 'ativo', '123456'),
+  ('Prefeitura de Juína', 'patrocinador@juina360.com', 'patrocinador', 'ativo', '123456')
 ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO patrocinadores (nome, url, ativo) VALUES
@@ -148,3 +149,95 @@ DROP POLICY IF EXISTS juina360_objects_all ON storage.objects;
 CREATE POLICY juina360_objects_all ON storage.objects
   FOR ALL TO anon, authenticated
   USING (bucket_id = 'midias') WITH CHECK (bucket_id = 'midias');
+
+-- ===================== CAMPANHAS PATROCINADAS =====================
+-- Perfil de usuário para empresas patrocinadoras
+ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_perfil_check;
+ALTER TABLE usuarios ADD CONSTRAINT usuarios_perfil_check
+  CHECK (perfil IN ('admin', 'editor', 'colaborador', 'patrocinador'));
+
+CREATE TABLE IF NOT EXISTS sponsors (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome TEXT NOT NULL,
+  email TEXT,
+  telefone TEXT,
+  whatsapp TEXT,
+  logo_url TEXT,
+  ativo BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS campanhas (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  sponsor_id UUID REFERENCES sponsors(id) ON DELETE SET NULL,
+  titulo TEXT NOT NULL,
+  descricao TEXT,
+  link_url TEXT,
+  media JSONB NOT NULL DEFAULT '[]'::jsonb,
+  start_at TIMESTAMPTZ,
+  end_at TIMESTAMPTZ,
+  status TEXT NOT NULL DEFAULT 'rascunho',
+  recusa_motivo TEXT,
+  views INTEGER NOT NULL DEFAULT 0,
+  cliques INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS campaign_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  campaign_id UUID REFERENCES campanhas(id) ON DELETE CASCADE,
+  tipo TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_campanhas_status ON campanhas(status);
+CREATE INDEX IF NOT EXISTS idx_campanhas_sponsor ON campanhas(sponsor_id);
+CREATE INDEX IF NOT EXISTS idx_campaign_events_campaign ON campaign_events(campaign_id);
+
+DROP TRIGGER IF EXISTS update_campanhas_updated_at ON campanhas;
+CREATE TRIGGER update_campanhas_updated_at BEFORE UPDATE ON campanhas FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Contadores de campanha (usados pelo banner)
+CREATE OR REPLACE FUNCTION registrar_visualizacao_campanha(campanha_id UUID)
+RETURNS void AS $func$
+BEGIN
+  INSERT INTO campaign_events (campaign_id, tipo) VALUES (campanha_id, 'visualizacao');
+  UPDATE campanhas SET views = views + 1 WHERE id = campanha_id;
+END;
+$func$ language 'plpgsql';
+
+CREATE OR REPLACE FUNCTION registrar_clique_campanha(campanha_id UUID)
+RETURNS void AS $func$
+BEGIN
+  INSERT INTO campaign_events (campaign_id, tipo) VALUES (campanha_id, 'clique');
+  UPDATE campanhas SET cliques = cliques + 1 WHERE id = campanha_id;
+END;
+$func$ language 'plpgsql';
+
+GRANT EXECUTE ON FUNCTION registrar_visualizacao_campanha TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION registrar_clique_campanha TO anon, authenticated;
+
+-- Seed de exemplo: empresa + campanha publicada (preencher mídia/links no admin)
+INSERT INTO sponsors (nome, email, ativo)
+SELECT 'Prefeitura de Juína', 'patrocinador@juina360.com', true
+WHERE NOT EXISTS (SELECT 1 FROM sponsors WHERE nome = 'Prefeitura de Juína');
+
+INSERT INTO campanhas (sponsor_id, titulo, descricao, status, start_at, end_at)
+SELECT s.id, 'Campanha institucional', 'Conheça a Prefeitura de Juína e os serviços disponíveis para a população.', 'publicado', now(), now() + interval '90 days'
+FROM sponsors s WHERE s.nome = 'Prefeitura de Juína'
+AND NOT EXISTS (SELECT 1 FROM campanhas WHERE titulo = 'Campanha institucional');
+
+-- RLS permissivo (mesma política do restante do portal)
+ALTER TABLE sponsors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE campanhas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE campaign_events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS juina360_all_sponsors ON sponsors;
+CREATE POLICY juina360_all_sponsors ON sponsors FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS juina360_all_campanhas ON campanhas;
+CREATE POLICY juina360_all_campanhas ON campanhas FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS juina360_all_campaign_events ON campaign_events;
+CREATE POLICY juina360_all_campaign_events ON campaign_events FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);

@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Noticia, Categoria, Patrocinador, Usuario, TipoMedia } from '../types';
+import type { Noticia, Categoria, Patrocinador, Usuario, TipoMedia, Sponsor, Campanha } from '../types';
 
 const mapNoticia = (row: any): Noticia => ({
   id: row.id,
@@ -42,6 +42,35 @@ const mapUsuario = (row: any): Usuario => ({
   perfil: row.perfil,
   status: row.status,
   senha: row.senha,
+});
+
+const mapSponsor = (row: any): Sponsor => ({
+  id: row.id,
+  nome: row.nome,
+  email: row.email ?? undefined,
+  telefone: row.telefone ?? undefined,
+  whatsapp: row.whatsapp ?? undefined,
+  logoUrl: row.logo_url ?? undefined,
+  ativo: row.ativo,
+  createdAt: row.created_at ? new Date(row.created_at) : undefined,
+});
+
+const mapCampanha = (row: any): Campanha => ({
+  id: row.id,
+  sponsorId: row.sponsor_id ?? undefined,
+  titulo: row.titulo,
+  descricao: row.descricao ?? undefined,
+  linkUrl: row.link_url ?? undefined,
+  media: row.media ?? [],
+  startAt: row.start_at ? new Date(row.start_at) : undefined,
+  endAt: row.end_at ? new Date(row.end_at) : undefined,
+  status: row.status,
+  recusaMotivo: row.recusa_motivo ?? undefined,
+  views: row.views ?? 0,
+  cliques: row.cliques ?? 0,
+  sponsorNome: row.sponsors?.nome,
+  sponsorEmail: row.sponsors?.email,
+  createdAt: new Date(row.created_at),
 });
 
 export { supabaseDisponivel } from './supabase';
@@ -205,6 +234,119 @@ export async function updateUsuario(id: string, data: Partial<Usuario>): Promise
 export async function deleteUsuario(id: string): Promise<void> {
   const { error } = await supabase.from('usuarios').delete().eq('id', id);
   if (error) throw error;
+}
+
+// ===================== CAMPANHAS PATROCINADAS =====================
+export async function fetchSponsors(opts?: { ativos?: boolean }): Promise<Sponsor[]> {
+  let query = supabase.from('sponsors').select('*');
+  if (opts?.ativos) query = query.eq('ativo', true);
+  const { data, error } = await query.order('nome');
+  if (error) throw error;
+  return (data || []).map(mapSponsor);
+}
+
+export async function createSponsor(s: Omit<Sponsor, 'id'>): Promise<Sponsor> {
+  const { data, error } = await supabase
+    .from('sponsors').insert({
+      nome: s.nome,
+      email: s.email ?? null,
+      telefone: s.telefone ?? null,
+      whatsapp: s.whatsapp ?? null,
+      logo_url: s.logoUrl ?? null,
+      ativo: s.ativo,
+    }).select().single();
+  if (error) throw error;
+  return mapSponsor(data);
+}
+
+export async function updateSponsor(id: string, data: Partial<Sponsor>): Promise<void> {
+  const updates: any = {};
+  if (data.nome !== undefined) updates.nome = data.nome;
+  if (data.email !== undefined) updates.email = data.email;
+  if (data.telefone !== undefined) updates.telefone = data.telefone;
+  if (data.whatsapp !== undefined) updates.whatsapp = data.whatsapp;
+  if (data.logoUrl !== undefined) updates.logo_url = data.logoUrl;
+  if (data.ativo !== undefined) updates.ativo = data.ativo;
+  const { error } = await supabase.from('sponsors').update(updates).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteSponsor(id: string): Promise<void> {
+  const { error } = await supabase.from('sponsors').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function buscarSponsorPorEmail(email: string): Promise<Sponsor | null> {
+  const { data, error } = await supabase.from('sponsors').select('*').eq('email', email).maybeSingle();
+  if (error || !data) return null;
+  return mapSponsor(data);
+}
+
+export async function fetchCampanhas(opts?: { status?: string; sponsorId?: string }): Promise<Campanha[]> {
+  let query = supabase.from('campanhas').select('*, sponsors(nome, email)').order('created_at', { ascending: false });
+  if (opts?.status) query = query.eq('status', opts.status);
+  if (opts?.sponsorId) query = query.eq('sponsor_id', opts.sponsorId);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || []).map(mapCampanha);
+}
+
+export async function createCampanha(c: Omit<Campanha, 'id' | 'views' | 'cliques' | 'createdAt'>): Promise<Campanha> {
+  const { data, error } = await supabase
+    .from('campanhas')
+    .insert({
+      sponsor_id: c.sponsorId ?? null,
+      titulo: c.titulo,
+      descricao: c.descricao ?? null,
+      link_url: c.linkUrl ?? null,
+      media: c.media ?? [],
+      start_at: c.startAt ? new Date(c.startAt).toISOString() : null,
+      end_at: c.endAt ? new Date(c.endAt).toISOString() : null,
+      status: c.status,
+    })
+    .select('*, sponsors(nome, email)')
+    .single();
+  if (error) throw error;
+  return mapCampanha(data);
+}
+
+export async function updateCampanha(id: string, data: Partial<Campanha>): Promise<void> {
+  const updates: any = {};
+  if (data.sponsorId !== undefined) updates.sponsor_id = data.sponsorId ?? null;
+  if (data.titulo !== undefined) updates.titulo = data.titulo;
+  if (data.descricao !== undefined) updates.descricao = data.descricao ?? null;
+  if (data.linkUrl !== undefined) updates.link_url = data.linkUrl ?? null;
+  if (data.media !== undefined) updates.media = data.media;
+  if (data.startAt !== undefined) updates.start_at = data.startAt ? new Date(data.startAt).toISOString() : null;
+  if (data.endAt !== undefined) updates.end_at = data.endAt ? new Date(data.endAt).toISOString() : null;
+  if (data.status !== undefined) updates.status = data.status;
+  if (data.recusaMotivo !== undefined) updates.recusa_motivo = data.recusaMotivo ?? null;
+  const { error } = await supabase.from('campanhas').update(updates).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteCampanha(id: string): Promise<void> {
+  const { error } = await supabase.from('campanhas').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function registrarVisualizacaoCampanha(id: string): Promise<void> {
+  await supabase.rpc('registrar_visualizacao_campanha', { campanha_id: id });
+}
+
+export async function registrarCliqueCampanha(id: string): Promise<void> {
+  await supabase.rpc('registrar_clique_campanha', { campanha_id: id });
+}
+
+export async function fetchAlertasCampanha(): Promise<{ status: string; qtd: number }[]> {
+  const { data, error } = await supabase
+    .from('campanhas')
+    .select('status')
+    .in('status', ['pendente', 'aprovado', 'publicado']);
+  if (error) throw error;
+  const contagem: Record<string, number> = {};
+  for (const r of data || []) contagem[r.status] = (contagem[r.status] ?? 0) + 1;
+  return Object.entries(contagem).map(([status, qtd]) => ({ status, qtd }));
 }
 
 // ===================== STORAGE =====================
