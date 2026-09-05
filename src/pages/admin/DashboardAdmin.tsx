@@ -25,7 +25,7 @@ export function DashboardAdmin() {
         </div>
         <Link
           to="/admin/noticias"
-          className="rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-amber-400"
+          className="brand-gradient rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-amber-500/30 transition hover:-translate-y-0.5 hover:shadow-xl"
         >
           + Nova notícia
         </Link>
@@ -33,8 +33,8 @@ export function DashboardAdmin() {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map(s => (
-          <div key={s.label} className="rounded-xl border border-zinc-200 bg-white p-5">
-            <div className={`inline-flex rounded-lg p-2 ${s.cor}`}>
+          <div key={s.label} className="card-hover rounded-2xl border border-zinc-200 bg-white p-5">
+            <div className={`inline-flex rounded-xl p-2.5 ${s.cor}`}>
               <s.icon className="h-5 w-5" />
             </div>
             <div className="mt-3 text-3xl font-black text-slate-900">{s.valor}</div>

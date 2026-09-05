@@ -50,13 +50,13 @@ export function PatrocinadoresDestaque() {
 
   return (
     <section className="mx-auto w-full max-w-6xl px-4 pt-4">
-      <h2 className="flex items-center gap-2 text-lg font-black uppercase tracking-wide text-slate-900">
+      <h2 className="flex items-center gap-2 font-display text-xl font-extrabold uppercase tracking-wide text-slate-900">
         <Award className="h-5 w-5 text-amber-500" />
         Patrocinadores
       </h2>
 
       <div
-        className="group relative mt-3 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-md"
+        className="group relative mt-3 overflow-hidden rounded-3xl border border-zinc-200 bg-white shadow-md"
         onMouseEnter={() => setPausado(true)}
         onMouseLeave={() => setPausado(false)}
       >

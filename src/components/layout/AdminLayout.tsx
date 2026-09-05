@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import {
   LayoutDashboard, Newspaper, Tags, Handshake, Users, LogOut, Globe,
@@ -23,14 +23,22 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
     navigate('/login');
   };
 
+  const iniciais = (currentUser?.nome ?? 'JU')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(p => p[0].toUpperCase())
+    .join('');
+
   return (
-    <div className="flex min-h-screen bg-zinc-100">
-      <aside className="fixed inset-y-0 left-0 z-30 flex w-60 flex-col border-r border-zinc-200 bg-slate-900">
-        <div className="flex h-16 items-center gap-2 border-b border-white/10 px-4">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-xs font-bold text-amber-400">360</span>
-          <div>
-            <div className="text-sm font-black text-white">JUINA<span className="text-amber-400">360º</span></div>
-            <div className="text-[10px] uppercase tracking-wide text-zinc-500">Painel de Gestão</div>
+    <div className="flex min-h-screen bg-slate-100">
+      <aside className="fixed inset-y-0 left-0 z-30 flex w-60 flex-col border-r border-slate-800 bg-slate-950">
+        <div className="relative flex h-16 items-center gap-2 overflow-hidden border-b border-white/10 px-4">
+          <div className="brand-gradient pointer-events-none absolute -top-10 -right-8 h-24 w-24 rounded-full opacity-30 blur-2xl" />
+          <span className="brand-gradient relative flex h-9 w-9 items-center justify-center rounded-xl text-xs font-black text-white shadow-lg shadow-amber-500/20">360</span>
+          <div className="relative">
+            <div className="font-display text-sm font-extrabold text-white">JUINA<span className="text-amber-400">360º</span></div>
+            <div className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">Painel de Gestão</div>
           </div>
         </div>
         <nav className="flex-1 space-y-1 px-3 py-4">
@@ -41,34 +49,57 @@ export const AdminLayout: React.FC<{ children: React.ReactNode }> = ({ children 
               end={item.end}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition',
-                  isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'
+                  'group relative flex items-center gap-3 overflow-hidden rounded-xl px-3 py-2.5 text-sm font-medium transition',
+                  isActive
+                    ? 'bg-gradient-to-r from-amber-500/15 to-amber-500/5 text-white'
+                    : 'text-zinc-400 hover:bg-white/5 hover:text-white'
                 )
               }
             >
-              <item.icon className="h-4 w-4" />
-              {item.label}
+              {({ isActive }) => (
+                <>
+                  <span
+                    className={cn(
+                      'absolute left-0 top-1/2 h-6 -translate-y-1/2 rounded-r-full bg-amber-500 transition-all',
+                      isActive ? 'w-1' : 'w-0'
+                    )}
+                  />
+                  <item.icon
+                    className={cn('h-[18px] w-[18px] transition', isActive ? 'text-amber-400' : 'group-hover:text-amber-400')}
+                  />
+                  {item.label}
+                </>
+              )}
             </NavLink>
           ))}
-          <NavLink
+          <Link
             to="/"
-            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-white"
+            className="group relative flex items-center gap-3 overflow-hidden rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-400 transition hover:bg-white/5 hover:text-white"
           >
-            <Globe className="h-4 w-4" /> Ver site
-          </NavLink>
+            <Globe className="h-[18px] w-[18px] transition group-hover:text-amber-400" /> Ver site
+          </Link>
         </nav>
         <div className="border-t border-white/10 p-4">
-          <div className="text-sm font-semibold text-white">{currentUser?.nome}</div>
-          <div className="text-xs capitalize text-zinc-500">{currentUser?.perfil}</div>
+          <div className="flex items-center gap-3">
+            <span className="brand-gradient flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-black text-white">
+              {iniciais}
+            </span>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold text-white">{currentUser?.nome}</div>
+              <div className="text-xs capitalize text-zinc-500">{currentUser?.perfil}</div>
+            </div>
+          </div>
           <button
             onClick={handleLogout}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-md bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-400 transition hover:bg-red-500/20"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-red-500/10 px-3 py-2.5 text-sm font-semibold text-red-400 ring-1 ring-inset ring-red-500/20 transition hover:bg-red-500/20"
           >
             <LogOut className="h-4 w-4" /> Sair
           </button>
         </div>
       </aside>
-      <main className="ml-60 flex-1 p-6">{children}</main>
+      <main className="ml-60 flex-1 p-6 md:p-8">
+        <div className="animate-fade-in mx-auto max-w-5xl">{children}</div>
+      </main>
     </div>
   );
 };
