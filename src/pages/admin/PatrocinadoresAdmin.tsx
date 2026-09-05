@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useToast } from '@/components/ui/Toast';
 import type { Patrocinador, TipoMedia } from '@/types';
+import * as api from '@/lib/supabaseService';
+import { supabaseDisponivel } from '@/lib/supabaseService';
 import { Plus, Pencil, Trash2, Image as ImageIcon, Video, Music, X } from 'lucide-react';
 
 interface MediaItem {
@@ -36,22 +38,43 @@ export function PatrocinadoresAdmin() {
     });
   };
 
-  const lerArquivo = (tipo: TipoMedia) => (e: React.ChangeEvent<HTMLInputElement>) => {
+  const lerArquivo = (tipo: TipoMedia) => async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
+
+    const lerComoDataUrl = (): Promise<string> =>
+      new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.readAsDataURL(file);
+      });
+
+    try {
+      let url = '';
+      if (supabaseDisponivel) {
+        toast('info', `Enviando "${file.name}" para o Supabase...`);
+        try {
+          url = await api.uploadMedia(file, tipo);
+        } catch (err) {
+          console.warn('Upload falhou, usando local:', err);
+          url = await lerComoDataUrl();
+        }
+      } else {
+        url = await lerComoDataUrl();
+      }
       const item: MediaItem = {
         id: `med-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         tipo,
         nome: file.name,
-        url: String(reader.result),
+        url,
       };
       setForm(prev => ({ ...prev, media: [...prev.media, item] }));
       toast('success', `Arquivo "${file.name}" adicionado.`);
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
+    } catch (err) {
+      console.error(err);
+      toast('error', 'Não foi possível ler o arquivo.');
+    }
   };
 
   const removerMedia = (id: string) => {
@@ -161,7 +184,9 @@ export function PatrocinadoresAdmin() {
                 </div>
               )}
               <p className="mt-2 text-xs text-zinc-500">
-                Arquivos ficam salvos no navegador (sem Supabase). Para armazenamento permanente e publicação em larga escala, configure o Storage do Supabase.
+                {supabaseDisponivel
+                  ? 'Arquivos são enviados para o Storage do Supabase e acessíveis de qualquer dispositivo.'
+                  : 'Sem Supabase configurado, os arquivos ficam salvos localmente no navegador. Configure as variáveis de ambiente para armazenamento permanente.'}
               </p>
             </div>
           </div>

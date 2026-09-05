@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Noticia, Categoria, Patrocinador, Usuario } from '../types';
+import type { Noticia, Categoria, Patrocinador, Usuario, TipoMedia } from '../types';
 
 const mapNoticia = (row: any): Noticia => ({
   id: row.id,
@@ -205,4 +205,16 @@ export async function updateUsuario(id: string, data: Partial<Usuario>): Promise
 export async function deleteUsuario(id: string): Promise<void> {
   const { error } = await supabase.from('usuarios').delete().eq('id', id);
   if (error) throw error;
+}
+
+// ===================== STORAGE =====================
+export async function uploadMedia(file: File, tipo: TipoMedia): Promise<string> {
+  const ext = file.name.split('.').pop() || (tipo === 'imagem' ? 'jpg' : tipo === 'video' ? 'mp4' : 'mp3');
+  const path = `${tipo}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage
+    .from('midias')
+    .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+  if (error) throw error;
+  const { data } = supabase.storage.from('midias').getPublicUrl(path);
+  return data.publicUrl;
 }
