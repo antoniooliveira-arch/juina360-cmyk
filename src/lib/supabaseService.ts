@@ -43,7 +43,7 @@ const mapUsuario = (row: any): Usuario => ({
   senha: row.senha,
 });
 
-export const supabaseDisponivel = Boolean(import.meta.env.VITE_SUPABASE_URL);
+export { supabaseDisponivel } from './supabase';
 
 // ===================== CATEGORIAS =====================
 export async function fetchCategorias(): Promise<Categoria[]> {
