@@ -193,18 +193,19 @@ CREATE TABLE IF NOT EXISTS ad_slots (
   max_width INTEGER,
   max_height INTEGER,
   preco NUMERIC(10,2) NOT NULL DEFAULT 0,
+  max_ativos INTEGER NOT NULL DEFAULT 3,
   ativo BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-INSERT INTO ad_slots (id, nome, posicao, formato, max_width, max_height, preco) VALUES
-  ('topo', 'Patrocinador Topo', 'abaixo do menu', 'leaderboard 728x90', 728, 90, 150.00),
-  ('lateral_esquerda', 'Patrocinador Lateral Esquerda', 'lateral fixa enquanto navega', 'vertical 300x600', 300, 600, 120.00),
-  ('lateral_direita', 'Patrocinador Lateral Direita', 'lateral fixa enquanto navega', 'vertical 300x600', 300, 600, 120.00),
-  ('conteudo', 'Patrocinador no Conteúdo', 'dentro da leitura da notícia', 'horizontal 468x60', 468, 60, 90.00),
-  ('destaque', 'Patrocinador Destaque', 'área grande abaixo do topo', 'destaque foto/vídeo', 970, 250, 250.00),
-  ('cards', 'Patrocinadores em Cards', 'grade de cartões na página inicial', 'card logo', 250, 120, 60.00),
-  ('rodape', 'Patrocinador Rodapé', 'faixa fixa no rodapé', 'faixa logo', 728, 60, 40.00)
+INSERT INTO ad_slots (id, nome, posicao, formato, max_width, max_height, preco, max_ativos) VALUES
+  ('topo', 'Patrocinador Topo', 'abaixo do menu', 'leaderboard 728x90', 728, 90, 150.00, 3),
+  ('lateral_esquerda', 'Patrocinador Lateral Esquerda', 'lateral fixa enquanto navega', 'vertical 300x600', 300, 600, 120.00, 1),
+  ('lateral_direita', 'Patrocinador Lateral Direita', 'lateral fixa enquanto navega', 'vertical 300x600', 300, 600, 120.00, 1),
+  ('conteudo', 'Patrocinador no Conteúdo', 'dentro da leitura da notícia', 'horizontal 468x60', 468, 60, 90.00, 3),
+  ('destaque', 'Patrocinador Destaque', 'área grande abaixo do topo', 'destaque foto/vídeo', 970, 250, 250.00, 3),
+  ('cards', 'Patrocinadores em Cards', 'grade de cartões na página inicial', 'card logo', 250, 120, 60.00, 8),
+  ('rodape', 'Patrocinador Rodapé', 'faixa fixa no rodapé', 'faixa logo', 728, 60, 40.00, 6)
 ON CONFLICT (id) DO NOTHING;
 
 ALTER TABLE campanhas ADD COLUMN IF NOT EXISTS slots TEXT[] NOT NULL DEFAULT '{}'::text[];

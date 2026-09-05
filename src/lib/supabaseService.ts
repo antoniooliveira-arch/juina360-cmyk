@@ -245,17 +245,18 @@ const mapAdSlot = (row: any): AdSlot => ({
   max_width: row.max_width,
   max_height: row.max_height,
   preco: Number(row.preco ?? 0),
+  maxAtivos: row.max_ativos ?? 3,
   ativo: row.ativo,
 });
 
 export const AD_SLOTS: AdSlot[] = [
-  { id: 'topo', nome: 'Patrocinador Topo', posicao: 'abaixo do menu', formato: 'leaderboard 728x90', max_width: 728, max_height: 90, preco: 150, ativo: true },
-  { id: 'lateral_esquerda', nome: 'Patrocinador Lateral Esquerda', posicao: 'lateral fixa enquanto navega', formato: 'vertical 300x600', max_width: 300, max_height: 600, preco: 120, ativo: true },
-  { id: 'lateral_direita', nome: 'Patrocinador Lateral Direita', posicao: 'lateral fixa enquanto navega', formato: 'vertical 300x600', max_width: 300, max_height: 600, preco: 120, ativo: true },
-  { id: 'conteudo', nome: 'Patrocinador no Conteúdo', posicao: 'dentro da leitura da notícia', formato: 'horizontal 468x60', max_width: 468, max_height: 60, preco: 90, ativo: true },
-  { id: 'destaque', nome: 'Patrocinador Destaque', posicao: 'área grande abaixo do topo', formato: 'destaque foto/vídeo', max_width: 970, max_height: 250, preco: 250, ativo: true },
-  { id: 'cards', nome: 'Patrocinadores em Cards', posicao: 'grade de cartões na página inicial', formato: 'card logo', max_width: 250, max_height: 120, preco: 60, ativo: true },
-  { id: 'rodape', nome: 'Patrocinador Rodapé', posicao: 'faixa fixa no rodapé', formato: 'faixa logo', max_width: 728, max_height: 60, preco: 40, ativo: true },
+  { id: 'topo', nome: 'Patrocinador Topo', posicao: 'abaixo do menu', formato: 'leaderboard 728x90', max_width: 728, max_height: 90, preco: 150, maxAtivos: 3, ativo: true },
+  { id: 'lateral_esquerda', nome: 'Patrocinador Lateral Esquerda', posicao: 'lateral fixa enquanto navega', formato: 'vertical 300x600', max_width: 300, max_height: 600, preco: 120, maxAtivos: 1, ativo: true },
+  { id: 'lateral_direita', nome: 'Patrocinador Lateral Direita', posicao: 'lateral fixa enquanto navega', formato: 'vertical 300x600', max_width: 300, max_height: 600, preco: 120, maxAtivos: 1, ativo: true },
+  { id: 'conteudo', nome: 'Patrocinador no Conteúdo', posicao: 'dentro da leitura da notícia', formato: 'horizontal 468x60', max_width: 468, max_height: 60, preco: 90, maxAtivos: 3, ativo: true },
+  { id: 'destaque', nome: 'Patrocinador Destaque', posicao: 'área grande abaixo do topo', formato: 'destaque foto/vídeo', max_width: 970, max_height: 250, preco: 250, maxAtivos: 3, ativo: true },
+  { id: 'cards', nome: 'Patrocinadores em Cards', posicao: 'grade de cartões na página inicial', formato: 'card logo', max_width: 250, max_height: 120, preco: 60, maxAtivos: 8, ativo: true },
+  { id: 'rodape', nome: 'Patrocinador Rodapé', posicao: 'faixa fixa no rodapé', formato: 'faixa logo', max_width: 728, max_height: 60, preco: 40, maxAtivos: 6, ativo: true },
 ];
 
 export async function fetchAdSlots(): Promise<AdSlot[]> {

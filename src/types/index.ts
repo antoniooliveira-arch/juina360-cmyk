@@ -85,6 +85,7 @@ export interface AdSlot {
   max_width?: number;
   max_height?: number;
   preco: number;
+  maxAtivos: number;
   ativo: boolean;
 }
 

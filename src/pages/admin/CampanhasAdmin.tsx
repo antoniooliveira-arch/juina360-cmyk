@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useToast } from '@/components/ui/Toast';
-import type { Campanha, StatusCampanha } from '@/types';
+import type { Campanha, StatusCampanha, SlotId } from '@/types';
 import { CampanhaForm, type CampanhaPayload } from '@/components/campanhas/CampanhaForm';
 import {
   Plus, Pencil, Trash2, Eye, MousePointerClick, Image as ImageIcon, Video, Music,
-  CheckCircle2, XCircle, Send, Rocket, Archive, Handshake,
+  CheckCircle2, XCircle, Send, Rocket, Archive, Handshake, LayoutGrid, Wallet, TrendingUp,
 } from 'lucide-react';
+import { formatBRL } from '@/lib/format';
 
 const statusInfo: Record<StatusCampanha, { label: string; cor: string }> = {
   rascunho: { label: 'Rascunho', cor: 'bg-zinc-100 text-zinc-600' },
@@ -20,7 +21,7 @@ const statusInfo: Record<StatusCampanha, { label: string; cor: string }> = {
 const dataCurta = (d?: Date) => (d ? new Date(d).toLocaleDateString('pt-BR') : '—');
 
 export function CampanhasAdmin() {
-  const { campanhas, sponsors, createSponsor, createCampanha, updateCampanha, deleteCampanha } = useApp();
+  const { campanhas, sponsors, adSlots, createSponsor, createCampanha, updateCampanha, deleteCampanha } = useApp();
   const { toast } = useToast();
   const [aberto, setAberto] = useState(false);
   const [editando, setEditando] = useState<Campanha | null>(null);
@@ -29,6 +30,31 @@ export function CampanhasAdmin() {
 
   const pendentes = campanhas.filter(c => c.status === 'pendente').length;
   const publicadas = campanhas.filter(c => c.status === 'publicado').length;
+
+  const agora = Date.now();
+  const ativasNaPosicao = (slotId: SlotId) =>
+    campanhas.filter(c =>
+      ['publicado', 'aprovado', 'pendente'].includes(c.status) &&
+      c.slots?.includes(slotId) &&
+      (!c.startAt || new Date(c.startAt).getTime() <= agora) &&
+      (!c.endAt || new Date(c.endAt).getTime() >= agora)
+    ).length;
+
+  const resumoSlots = adSlots
+    .filter(s => s.ativo)
+    .map(s => {
+      const ocupados = ativasNaPosicao(s.id);
+      const preco = s.preco ?? 0;
+      return {
+        slot: s,
+        ocupados,
+        lotada: ocupados >= s.maxAtivos,
+        receitaAtual: ocupados * preco,
+        receitaPotencial: s.maxAtivos * preco,
+      };
+    });
+  const receitaAtualTotal = resumoSlots.reduce((a, r) => a + r.receitaAtual, 0);
+  const receitaPotencialTotal = resumoSlots.reduce((a, r) => a + r.receitaPotencial, 0);
 
   const abreNovo = () => {
     setEditando(null);
@@ -126,6 +152,58 @@ export function CampanhasAdmin() {
         </div>
       </div>
 
+      <div className="mt-5 rounded-2xl border border-zinc-200 bg-white p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+            <LayoutGrid className="h-5 w-5 text-amber-500" /> Vendas por posição
+          </h2>
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <span className="flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-1.5 font-bold text-emerald-700">
+              <Wallet className="h-4 w-4" /> Agora: {formatBRL(receitaAtualTotal)}/mês
+            </span>
+            <span className="flex items-center gap-1.5 rounded-xl bg-zinc-100 px-3 py-1.5 font-semibold text-zinc-600">
+              <TrendingUp className="h-4 w-4" /> Potencial total: {formatBRL(receitaPotencialTotal)}/mês
+            </span>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {resumoSlots.map(({ slot, ocupados, lotada, receitaAtual, receitaPotencial }) => (
+            <div key={slot.id} className={`rounded-2xl border p-4 transition ${lotada ? 'border-red-200 bg-red-50/50' : 'border-zinc-200 bg-zinc-50/60'}`}>
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="text-sm font-extrabold text-slate-900">{slot.nome}</div>
+                  <div className="text-[11px] text-zinc-500">{slot.formato ?? slot.posicao}</div>
+                </div>
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${lotada ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
+                  {lotada ? 'Lotada' : 'Disponível'}
+                </span>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-xs text-zinc-500">
+                <span>{ocupados}/{slot.maxAtivos} vendidas</span>
+                <span className="font-bold text-slate-900">{formatBRL(slot.preco)}</span>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-zinc-200">
+                <div
+                  className={`h-full rounded-full ${lotada ? 'bg-red-400' : 'bg-amber-400'}`}
+                  style={{ width: `${Math.min(100, (ocupados / slot.maxAtivos) * 100)}%` }}
+                />
+              </div>
+              <div className="mt-2 flex justify-between text-[11px] text-zinc-400">
+                <span>Recebendo agora</span>
+                <span className="font-semibold text-zinc-600">{formatBRL(receitaAtual)}</span>
+              </div>
+              <div className="flex justify-between text-[11px] text-zinc-400">
+                <span>Se 100% vendido</span>
+                <span className="font-semibold text-zinc-600">{formatBRL(receitaPotencial)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-[11px] text-zinc-400">
+          Preços podem ser ajustados diretamente na tabela <code>ad_slots</code>. A ocupação considera campanhas publicadas, aprovadas e em análise dentro do período.
+        </p>
+      </div>
+
       {aberto && (
         <div className="mt-5 rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-slate-900">{editando ? 'Editar campanha' : 'Nova campanha'}</h2>
@@ -133,6 +211,8 @@ export function CampanhasAdmin() {
             <CampanhaForm
               initial={editando}
               sponsors={sponsors}
+              todasCampanhas={campanhas}
+              campanhaAtualId={editando?.id}
               novoStatus={editando?.status ?? 'rascunho'}
               submitLabel={editando ? 'Salvar alterações' : 'Criar campanha'}
               onSave={salvarForm}

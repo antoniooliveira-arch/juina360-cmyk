@@ -131,6 +131,8 @@ export function PatrocinadorPainel() {
               <CampanhaForm
                 initial={editando}
                 sponsorFixado={sponsor ?? undefined}
+                todasCampanhas={campanhas}
+                campanhaAtualId={editando?.id}
                 novoStatus={editando?.status ?? 'pendente'}
                 submitLabel={editando ? 'Salvar alterações' : 'Enviar para análise'}
                 onSave={salvar}

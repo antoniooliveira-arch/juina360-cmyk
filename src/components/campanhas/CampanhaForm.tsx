@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useToast } from '@/components/ui/Toast';
-import type { Sponsor, Campanha, StatusCampanha, TipoMedia, SlotId } from '@/types';
+import { useApp } from '@/context/AppContext';
+import type { Sponsor, Campanha, StatusCampanha, TipoMedia, SlotId, AdSlot } from '@/types';
 import * as api from '@/lib/supabaseService';
 import { supabaseDisponivel } from '@/lib/supabaseService';
 import { Image as ImageIcon, Video, Music, X, CalendarClock, Link2, Megaphone, Music2, LayoutGrid } from 'lucide-react';
@@ -49,9 +50,26 @@ interface Props {
   sponsors?: Sponsor[];
   sponsorFixado?: Sponsor;
   novoStatus?: StatusCampanha;
+  todasCampanhas?: Campanha[];
+  campanhaAtualId?: string;
   submitLabel?: string;
   onSave: (payload: CampanhaPayload) => Promise<void>;
   onCancel: () => void;
+}
+
+const offsetInicio = (t: number | undefined) => t ?? -Infinity;
+const offsetFim = (t: number | undefined) => t ?? Infinity;
+
+const periodosConflitam = (a: { startAt?: Date; endAt?: Date }, b: { startAt?: Date; endAt?: Date }) => {
+  const a0 = offsetInicio(a.startAt ? new Date(a.startAt).getTime() : undefined);
+  const a1 = offsetFim(a.endAt ? new Date(a.endAt).getTime() : undefined);
+  const b0 = offsetInicio(b.startAt ? new Date(b.startAt).getTime() : undefined);
+  const b1 = offsetFim(b.endAt ? new Date(b.endAt).getTime() : undefined);
+  return a0 < b1 && b0 < a1;
+};
+
+function findSlot(slots: AdSlot[], id: SlotId): AdSlot | undefined {
+  return slots.find(s => s.id === id);
 }
 
 export function CampanhaForm({
@@ -59,11 +77,14 @@ export function CampanhaForm({
   sponsors = [],
   sponsorFixado,
   novoStatus = 'rascunho',
+  todasCampanhas = [],
+  campanhaAtualId,
   submitLabel = 'Salvar',
   onSave,
   onCancel,
 }: Props) {
   const { toast } = useToast();
+  const { adSlots } = useApp();
   const [titulo, setTitulo] = useState(initial?.titulo ?? '');
   const [descricao, setDescricao] = useState(initial?.descricao ?? '');
   const [sponsorId, setSponsorId] = useState(initial?.sponsorId ?? sponsorFixado?.id ?? '');
@@ -142,6 +163,34 @@ export function CampanhaForm({
       toast('error', 'A data de término deve ser posterior ao início.');
       return;
     }
+    if (!slots.length) {
+      toast('error', 'Marque ao menos uma posição para a campanha.');
+      return;
+    }
+
+    const periodo = {
+      startAt: startAt ? new Date(startAt) : undefined,
+      endAt: endAt ? new Date(endAt) : undefined,
+    };
+    const sobrepostas = todasCampanhas.filter(c =>
+      c.id !== campanhaAtualId &&
+      ['publicado', 'aprovado', 'pendente', 'rascunho'].includes(c.status) &&
+      c.slots?.some(s => slots.includes(s)) &&
+      periodosConflitam(c, periodo)
+    );
+    const lotadas: SlotId[] = [];
+    for (const slot of slots) {
+      const slotDef = findSlot(adSlots, slot);
+      const max = slotDef?.maxAtivos ?? 3;
+      const ocupantes = sobrepostas.filter(c => c.slots?.includes(slot));
+      if (ocupantes.length >= max) lotadas.push(slot);
+    }
+    if (lotadas.length > 0) {
+      const nomes = TODOS_SLOTS.filter(s => lotadas.includes(s.id)).map(s => s.nome);
+      toast('error', `Posição(ões) esgotada(s) no período: ${nomes.join(', ')}. Escolha outro período ou libere outra posição.`);
+      return;
+    }
+
     setSalvando(true);
     try {
       await onSave({
@@ -229,25 +278,43 @@ export function CampanhaForm({
           </label>
           <p className="mt-0.5 text-xs text-zinc-500">Marque onde o anúncio deve aparecer. Quando o período expira, o espaço é liberado automaticamente.</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {TODOS_SLOTS.map(s => (
-              <label
-                key={s.id}
-                className={`flex cursor-pointer items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-sm transition ${
-                  slots.includes(s.id) ? 'border-amber-400 bg-amber-50' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100'
-                }`}
-              >
-                <span className="flex items-center gap-2 font-medium text-zinc-700">
-                  <input
-                    type="checkbox"
-                    checked={slots.includes(s.id)}
-                    onChange={e => setSlots(prev => (e.target.checked ? [...prev, s.id] : prev.filter(x => x !== s.id)))}
-                    className="h-4 w-4 accent-amber-500"
-                  />
-                  {s.nome}
-                </span>
-                <span className="shrink-0 text-[11px] font-bold text-zinc-400">{s.preco}</span>
-              </label>
-            ))}
+            {TODOS_SLOTS.map(s => {
+              const slotDef = findSlot(adSlots, s.id);
+              const ocupados = todasCampanhas.filter(c =>
+                c.id !== campanhaAtualId &&
+                ['publicado', 'aprovado', 'pendente', 'rascunho'].includes(c.status) &&
+                c.slots?.includes(s.id)
+              ).length;
+              const lotada = ocupados >= (slotDef?.maxAtivos ?? 3);
+              return (
+                <label
+                  key={s.id}
+                  className={`flex cursor-pointer items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-sm transition ${
+                    slots.includes(s.id)
+                      ? 'border-amber-400 bg-amber-50'
+                      : lotada
+                        ? 'border-red-200 bg-red-50/60'
+                        : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100'
+                  }`}
+                >
+                  <span className="flex items-center gap-2 font-medium text-zinc-700">
+                    <input
+                      type="checkbox"
+                      checked={slots.includes(s.id)}
+                      onChange={e => setSlots(prev => (e.target.checked ? [...prev, s.id] : prev.filter(x => x !== s.id)))}
+                      className="h-4 w-4 accent-amber-500"
+                    />
+                    {s.nome}
+                  </span>
+                  <span className="shrink-0 text-right">
+                    <span className={`block text-[10px] font-bold ${lotada ? 'text-red-500' : 'text-zinc-400'}`}>
+                      {ocupados}/{slotDef?.maxAtivos ?? 3} {lotada ? '· lotada' : ''}
+                    </span>
+                    <span className="block text-[10px] font-bold text-zinc-400">{s.preco}</span>
+                  </span>
+                </label>
+              );
+            })}
           </div>
         </div>
       </div>
