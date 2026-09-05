@@ -137,11 +137,14 @@ INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 VALUES ('midias', 'midias', true, 52428800, NULL)
 ON CONFLICT (id) DO NOTHING;
 
-DROP POLICY IF EXISTS juina360_anon_insert ON storage.objects;
-CREATE POLICY juina360_anon_insert ON storage.objects FOR INSERT TO anon WITH CHECK (bucket_id = 'midias');
+-- storage.buckets/objects ficam com RLS ativo e SEM políticas por padrão:
+-- sem elas o Storage API responde "Bucket not found" para a chave anônima.
+DROP POLICY IF EXISTS juina360_buckets_all ON storage.buckets;
+CREATE POLICY juina360_buckets_all ON storage.buckets
+  FOR ALL TO anon, authenticated
+  USING (id = 'midias') WITH CHECK (id = 'midias');
 
-DROP POLICY IF EXISTS juina360_anon_update ON storage.objects;
-CREATE POLICY juina360_anon_update ON storage.objects FOR UPDATE TO anon USING (bucket_id = 'midias');
-
-DROP POLICY IF EXISTS juina360_anon_delete ON storage.objects;
-CREATE POLICY juina360_anon_delete ON storage.objects FOR DELETE TO anon USING (bucket_id = 'midias');
+DROP POLICY IF EXISTS juina360_objects_all ON storage.objects;
+CREATE POLICY juina360_objects_all ON storage.objects
+  FOR ALL TO anon, authenticated
+  USING (bucket_id = 'midias') WITH CHECK (bucket_id = 'midias');
