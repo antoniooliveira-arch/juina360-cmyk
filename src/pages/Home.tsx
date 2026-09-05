@@ -1,6 +1,6 @@
 import { useApp } from '@/context/AppContext';
 import { NoticiaCard } from '@/components/noticias/NoticiaCard';
-import { PatrocinadoresBar } from '@/components/patrocinadores/PatrocinadoresBar';
+import { PatrocinadoresDestaque } from '@/components/patrocinadores/PatrocinadoresDestaque';
 import { Newspaper } from 'lucide-react';
 
 export function Home() {
@@ -22,9 +22,7 @@ export function Home() {
       </div>
 
       {(patrocinadores.length > 0 || !(import.meta.env.VITE_SUPABASE_URL)) && (
-        <div className="mx-auto max-w-6xl px-4 pt-4">
-          <PatrocinadoresBar />
-        </div>
+        <PatrocinadoresDestaque />
       )}
 
       <div className="mx-auto max-w-6xl px-4 py-6">
