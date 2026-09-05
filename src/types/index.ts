@@ -68,6 +68,26 @@ export interface Sponsor {
 
 export type StatusCampanha = 'rascunho' | 'pendente' | 'aprovado' | 'publicado' | 'recusado' | 'expirado';
 
+export type SlotId =
+  | 'topo'
+  | 'lateral_esquerda'
+  | 'lateral_direita'
+  | 'conteudo'
+  | 'destaque'
+  | 'cards'
+  | 'rodape';
+
+export interface AdSlot {
+  id: SlotId;
+  nome: string;
+  posicao: string;
+  formato?: string;
+  max_width?: number;
+  max_height?: number;
+  preco: number;
+  ativo: boolean;
+}
+
 export interface Campanha {
   id: string;
   sponsorId?: string;
@@ -75,6 +95,7 @@ export interface Campanha {
   descricao?: string;
   linkUrl?: string;
   media?: PatrocinadorMedia[];
+  slots?: SlotId[];
   startAt?: Date;
   endAt?: Date;
   status: StatusCampanha;

@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { useToast } from '@/components/ui/Toast';
-import type { Sponsor, Campanha, StatusCampanha, TipoMedia } from '@/types';
+import type { Sponsor, Campanha, StatusCampanha, TipoMedia, SlotId } from '@/types';
 import * as api from '@/lib/supabaseService';
 import { supabaseDisponivel } from '@/lib/supabaseService';
-import { Image as ImageIcon, Video, Music, X, CalendarClock, Link2, Megaphone, Music2 } from 'lucide-react';
+import { Image as ImageIcon, Video, Music, X, CalendarClock, Link2, Megaphone, Music2, LayoutGrid } from 'lucide-react';
 
 interface MediaItem {
   id: string;
@@ -19,10 +19,21 @@ export interface CampanhaPayload {
   descricao?: string;
   linkUrl?: string;
   media?: MediaItem[];
+  slots?: SlotId[];
   startAt?: Date;
   endAt?: Date;
   status: StatusCampanha;
 }
+
+const TODOS_SLOTS: { id: SlotId; nome: string; preco: string }[] = [
+  { id: 'destaque', nome: 'Destaque (foto/vídeo grande)', preco: 'R$ 250' },
+  { id: 'topo', nome: 'Topo (abaixo do menu)', preco: 'R$ 150' },
+  { id: 'lateral_esquerda', nome: 'Lateral esquerda', preco: 'R$ 120' },
+  { id: 'lateral_direita', nome: 'Lateral direita', preco: 'R$ 120' },
+  { id: 'conteudo', nome: 'Dentro do conteúdo', preco: 'R$ 90' },
+  { id: 'cards', nome: 'Cards de patrocinadores', preco: 'R$ 60' },
+  { id: 'rodape', nome: 'Rodapé', preco: 'R$ 40' },
+];
 
 const LIMITES: Record<TipoMedia, { max: number; msg: string; dica: string }> = {
   imagem: { max: 10, msg: 'A foto deve ter no máximo 10 MB.', dica: 'JPG, PNG ou WEBP (até 10 MB)' },
@@ -57,6 +68,7 @@ export function CampanhaForm({
   const [descricao, setDescricao] = useState(initial?.descricao ?? '');
   const [sponsorId, setSponsorId] = useState(initial?.sponsorId ?? sponsorFixado?.id ?? '');
   const [linkUrl, setLinkUrl] = useState(initial?.linkUrl ?? '');
+  const [slots, setSlots] = useState<SlotId[]>(initial?.slots ?? ['destaque']);
   const [startAt, setStartAt] = useState(toDateTime(initial?.startAt));
   const [endAt, setEndAt] = useState(toDateTime(initial?.endAt));
   const [media, setMedia] = useState<MediaItem[]>(
@@ -138,6 +150,7 @@ export function CampanhaForm({
         descricao: descricao.trim() || undefined,
         linkUrl: linkUrl.trim() || undefined,
         media,
+        slots,
         startAt: startAt ? new Date(startAt) : undefined,
         endAt: endAt ? new Date(endAt) : undefined,
         status: novoStatus,
@@ -207,6 +220,36 @@ export function CampanhaForm({
           </div>
         </div>
         <p className="text-xs text-zinc-500">O anúncio só aparece entre as datas preenchidas. Vazio = sem agendamento.</p>
+      </div>
+
+      <div className="lg:col-span-2 flex flex-wrap items-start justify-between gap-6 rounded-2xl border border-zinc-200 bg-white p-4">
+        <div className="min-w-0 flex-1">
+          <label className="flex items-center gap-1.5 text-sm font-medium text-zinc-700">
+            <LayoutGrid className="h-4 w-4 text-amber-500" /> Posições no site
+          </label>
+          <p className="mt-0.5 text-xs text-zinc-500">Marque onde o anúncio deve aparecer. Quando o período expira, o espaço é liberado automaticamente.</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {TODOS_SLOTS.map(s => (
+              <label
+                key={s.id}
+                className={`flex cursor-pointer items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-sm transition ${
+                  slots.includes(s.id) ? 'border-amber-400 bg-amber-50' : 'border-zinc-200 bg-zinc-50 hover:bg-zinc-100'
+                }`}
+              >
+                <span className="flex items-center gap-2 font-medium text-zinc-700">
+                  <input
+                    type="checkbox"
+                    checked={slots.includes(s.id)}
+                    onChange={e => setSlots(prev => (e.target.checked ? [...prev, s.id] : prev.filter(x => x !== s.id)))}
+                    className="h-4 w-4 accent-amber-500"
+                  />
+                  {s.nome}
+                </span>
+                <span className="shrink-0 text-[11px] font-bold text-zinc-400">{s.preco}</span>
+              </label>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div>

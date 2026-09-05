@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Noticia, Categoria, Patrocinador, Usuario, TipoMedia, Sponsor, Campanha } from '../types';
+import type { Noticia, Categoria, Patrocinador, Usuario, TipoMedia, Sponsor, Campanha, AdSlot } from '../types';
 
 const mapNoticia = (row: any): Noticia => ({
   id: row.id,
@@ -62,6 +62,7 @@ const mapCampanha = (row: any): Campanha => ({
   descricao: row.descricao ?? undefined,
   linkUrl: row.link_url ?? undefined,
   media: row.media ?? [],
+  slots: row.slots ?? [],
   startAt: row.start_at ? new Date(row.start_at) : undefined,
   endAt: row.end_at ? new Date(row.end_at) : undefined,
   status: row.status,
@@ -236,6 +237,33 @@ export async function deleteUsuario(id: string): Promise<void> {
   if (error) throw error;
 }
 
+const mapAdSlot = (row: any): AdSlot => ({
+  id: row.id,
+  nome: row.nome,
+  posicao: row.posicao,
+  formato: row.formato ?? undefined,
+  max_width: row.max_width,
+  max_height: row.max_height,
+  preco: Number(row.preco ?? 0),
+  ativo: row.ativo,
+});
+
+export const AD_SLOTS: AdSlot[] = [
+  { id: 'topo', nome: 'Patrocinador Topo', posicao: 'abaixo do menu', formato: 'leaderboard 728x90', max_width: 728, max_height: 90, preco: 150, ativo: true },
+  { id: 'lateral_esquerda', nome: 'Patrocinador Lateral Esquerda', posicao: 'lateral fixa enquanto navega', formato: 'vertical 300x600', max_width: 300, max_height: 600, preco: 120, ativo: true },
+  { id: 'lateral_direita', nome: 'Patrocinador Lateral Direita', posicao: 'lateral fixa enquanto navega', formato: 'vertical 300x600', max_width: 300, max_height: 600, preco: 120, ativo: true },
+  { id: 'conteudo', nome: 'Patrocinador no Conteúdo', posicao: 'dentro da leitura da notícia', formato: 'horizontal 468x60', max_width: 468, max_height: 60, preco: 90, ativo: true },
+  { id: 'destaque', nome: 'Patrocinador Destaque', posicao: 'área grande abaixo do topo', formato: 'destaque foto/vídeo', max_width: 970, max_height: 250, preco: 250, ativo: true },
+  { id: 'cards', nome: 'Patrocinadores em Cards', posicao: 'grade de cartões na página inicial', formato: 'card logo', max_width: 250, max_height: 120, preco: 60, ativo: true },
+  { id: 'rodape', nome: 'Patrocinador Rodapé', posicao: 'faixa fixa no rodapé', formato: 'faixa logo', max_width: 728, max_height: 60, preco: 40, ativo: true },
+];
+
+export async function fetchAdSlots(): Promise<AdSlot[]> {
+  const { data, error } = await supabase.from('ad_slots').select('*').order('preco', { ascending: false });
+  if (error || !data || data.length === 0) return AD_SLOTS;
+  return data.map(mapAdSlot);
+}
+
 // ===================== CAMPANHAS PATROCINADAS =====================
 export async function fetchSponsors(opts?: { ativos?: boolean }): Promise<Sponsor[]> {
   let query = supabase.from('sponsors').select('*');
@@ -300,6 +328,7 @@ export async function createCampanha(c: Omit<Campanha, 'id' | 'views' | 'cliques
       descricao: c.descricao ?? null,
       link_url: c.linkUrl ?? null,
       media: c.media ?? [],
+      slots: c.slots ?? [],
       start_at: c.startAt ? new Date(c.startAt).toISOString() : null,
       end_at: c.endAt ? new Date(c.endAt).toISOString() : null,
       status: c.status,
@@ -317,6 +346,7 @@ export async function updateCampanha(id: string, data: Partial<Campanha>): Promi
   if (data.descricao !== undefined) updates.descricao = data.descricao ?? null;
   if (data.linkUrl !== undefined) updates.link_url = data.linkUrl ?? null;
   if (data.media !== undefined) updates.media = data.media;
+  if (data.slots !== undefined) updates.slots = data.slots;
   if (data.startAt !== undefined) updates.start_at = data.startAt ? new Date(data.startAt).toISOString() : null;
   if (data.endAt !== undefined) updates.end_at = data.endAt ? new Date(data.endAt).toISOString() : null;
   if (data.status !== undefined) updates.status = data.status;

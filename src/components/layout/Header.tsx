@@ -1,6 +1,7 @@
 import { Link, NavLink } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { LogIn, Menu, X, LayoutDashboard, Globe, Newspaper, Mail, ArrowRight } from 'lucide-react';
+import { AdRodape } from '@/components/slots/AdRodape';
 import { useState } from 'react';
 
 export function Logo({ escuro = false }: { escuro?: boolean }) {
@@ -117,9 +118,10 @@ export function Header() {
 }
 
 export function Footer() {
-  const { categorias } = useApp();
+  const { categorias, campanhasPorSlot } = useApp();
   return (
     <footer className="mt-14">
+      <AdRodape campanhas={campanhasPorSlot.rodape} />
       <div className="brand-gradient">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-6 text-slate-900 sm:flex-row">
           <div className="flex items-center gap-3">

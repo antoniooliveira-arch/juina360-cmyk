@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode, useMemo } from 'react';
-import type { Usuario, Categoria, Noticia, Patrocinador, Sponsor, Campanha } from '../types';
+import type { Usuario, Categoria, Noticia, Patrocinador, Sponsor, Campanha, AdSlot, SlotId } from '../types';
 import {
   categorias as initialCategorias,
   usuarios as initialUsuarios,
@@ -16,6 +16,8 @@ interface AppContextType {
   sponsors: Sponsor[];
   campanhas: Campanha[];
   campanhasPublicas: Campanha[];
+  campanhasPorSlot: Record<SlotId, Campanha[]>;
+  adSlots: AdSlot[];
   currentUser: Usuario | null;
   isAuthenticated: boolean;
   loading: boolean;
@@ -69,6 +71,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [usuarios, setUsuarios] = useState<Usuario[]>(initialUsuarios);
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [campanhas, setCampanhas] = useState<Campanha[]>([]);
+  const [adSlots, setAdSlots] = useState<AdSlot[]>(api.AD_SLOTS);
   const [currentUser, setCurrentUser] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -113,6 +116,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         if (spons.length) setSponsors(spons);
       } catch (err) {
         console.warn('Falha ao carregar sponsors:', err);
+      }
+      try {
+        const slots = await api.fetchAdSlots();
+        if (slots.length) setAdSlots(slots);
+      } catch (err) {
+        console.warn('Falha ao carregar ad_slots:', err);
       } finally {
         setLoading(false);
       }
@@ -129,6 +138,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       return true;
     });
   }, [campanhas]);
+
+  const campanhasPorSlot = useMemo(() => {
+    const porSlot: Record<SlotId, Campanha[]> = {
+      topo: [], lateral_esquerda: [], lateral_direita: [],
+      conteudo: [], destaque: [], cards: [], rodape: [],
+    };
+    for (const c of campanhasPublicas) {
+      for (const slot of c.slots ?? []) {
+        if (porSlot[slot]) porSlot[slot].push(c);
+      }
+    }
+    return porSlot;
+  }, [campanhasPublicas]);
 
   const login = useCallback((email: string, senha: string): boolean => {
     const user = usuarios.find(u => u.email === email && u.senha === senha && u.status === 'ativo');
@@ -340,7 +362,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     <AppContext.Provider
       value={{
         categorias, noticias, patrocinadores, usuarios,
-        sponsors, campanhas, campanhasPublicas,
+        sponsors, campanhas, campanhasPublicas, campanhasPorSlot, adSlots,
         currentUser, isAuthenticated: !!currentUser, loading,
         login, logout,
         createNoticia, updateNoticia, deleteNoticia,

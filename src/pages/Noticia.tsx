@@ -1,12 +1,16 @@
+import { Fragment } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
 import { FileQuestion, Home as HomeIcon, ChevronRight, CalendarDays, Eye, Share2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { AdSlotTopo } from '@/components/slots/AdSlotTopo';
+import { AdLateral } from '@/components/slots/AdLateral';
+import { AdConteudo } from '@/components/slots/AdConteudo';
 
 export function Noticia() {
   const { slug } = useParams<{ slug: string }>();
-  const { noticias } = useApp();
+  const { noticias, campanhasPorSlot } = useApp();
   const noticia = noticias.find(n => n.slug === slug && n.status === 'publicado');
 
   if (!noticia) {
@@ -38,8 +42,17 @@ export function Noticia() {
     }
   };
 
+  const paragrafos = noticia.conteudo.split('\n').filter(p => p.trim());
+
   return (
-    <article className="mx-auto max-w-3xl px-4 py-8">
+    <div>
+      <AdSlotTopo campanhas={campanhasPorSlot.topo} />
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 pt-6 xl:grid-cols-[16rem_minmax(0,1fr)_16rem]">
+        <div className="hidden xl:block">
+          <AdLateral campanhas={campanhasPorSlot.lateral_esquerda} lado="esquerda" />
+        </div>
+
+        <article className="mx-auto w-full max-w-3xl py-2">
       <nav className="flex items-center gap-1 text-sm text-zinc-500">
         <Link to="/" className="flex items-center gap-1 hover:text-amber-600">
           <HomeIcon className="h-3.5 w-3.5" /> Home
@@ -95,9 +108,13 @@ export function Noticia() {
       </div>
 
       <div className="prose-news mt-7 text-slate-800">
-        {noticia.conteudo.split('\n').map((paragrafo, i) =>
-          paragrafo.trim() ? <p key={i}>{paragrafo}</p> : null
-        )}
+        {paragrafos.map((paragrafo, i) => (
+          <Fragment key={i}>
+            {i === 3 && <AdConteudo campanhas={campanhasPorSlot.conteudo} />}
+            {i === 6 && <AdConteudo campanhas={campanhasPorSlot.conteudo} />}
+            <p>{paragrafo}</p>
+          </Fragment>
+        ))}
       </div>
 
       {noticia.autorNome === 'JUINA360º' && (
@@ -109,6 +126,12 @@ export function Noticia() {
           </div>
         </div>
       )}
-    </article>
+      </article>
+
+      <div className="hidden xl:block">
+        <AdLateral campanhas={campanhasPorSlot.lateral_direita} lado="direita" />
+      </div>
+      </div>
+    </div>
   );
 }

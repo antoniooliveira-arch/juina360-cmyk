@@ -184,6 +184,38 @@ CREATE TABLE IF NOT EXISTS campanhas (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- ===================== POSIÇÕES COMERCIAIS (AD SLOTS) =====================
+CREATE TABLE IF NOT EXISTS ad_slots (
+  id TEXT PRIMARY KEY,
+  nome TEXT NOT NULL,
+  posicao TEXT NOT NULL,
+  formato TEXT,
+  max_width INTEGER,
+  max_height INTEGER,
+  preco NUMERIC(10,2) NOT NULL DEFAULT 0,
+  ativo BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+INSERT INTO ad_slots (id, nome, posicao, formato, max_width, max_height, preco) VALUES
+  ('topo', 'Patrocinador Topo', 'abaixo do menu', 'leaderboard 728x90', 728, 90, 150.00),
+  ('lateral_esquerda', 'Patrocinador Lateral Esquerda', 'lateral fixa enquanto navega', 'vertical 300x600', 300, 600, 120.00),
+  ('lateral_direita', 'Patrocinador Lateral Direita', 'lateral fixa enquanto navega', 'vertical 300x600', 300, 600, 120.00),
+  ('conteudo', 'Patrocinador no Conteúdo', 'dentro da leitura da notícia', 'horizontal 468x60', 468, 60, 90.00),
+  ('destaque', 'Patrocinador Destaque', 'área grande abaixo do topo', 'destaque foto/vídeo', 970, 250, 250.00),
+  ('cards', 'Patrocinadores em Cards', 'grade de cartões na página inicial', 'card logo', 250, 120, 60.00),
+  ('rodape', 'Patrocinador Rodapé', 'faixa fixa no rodapé', 'faixa logo', 728, 60, 40.00)
+ON CONFLICT (id) DO NOTHING;
+
+ALTER TABLE campanhas ADD COLUMN IF NOT EXISTS slots TEXT[] NOT NULL DEFAULT '{}'::text[];
+
+CREATE INDEX IF NOT EXISTS idx_campanhas_slots ON campanhas USING GIN (slots);
+
+ALTER TABLE ad_slots ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS juina360_all_ad_slots ON ad_slots;
+CREATE POLICY juina360_all_ad_slots ON ad_slots FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
 CREATE TABLE IF NOT EXISTS campaign_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   campaign_id UUID REFERENCES campanhas(id) ON DELETE CASCADE,
@@ -223,8 +255,8 @@ INSERT INTO sponsors (nome, email, ativo)
 SELECT 'Prefeitura de Juína', 'patrocinador@juina360.com', true
 WHERE NOT EXISTS (SELECT 1 FROM sponsors WHERE nome = 'Prefeitura de Juína');
 
-INSERT INTO campanhas (sponsor_id, titulo, descricao, status, start_at, end_at)
-SELECT s.id, 'Campanha institucional', 'Conheça a Prefeitura de Juína e os serviços disponíveis para a população.', 'publicado', now(), now() + interval '90 days'
+INSERT INTO campanhas (sponsor_id, titulo, descricao, status, slots, start_at, end_at)
+SELECT s.id, 'Campanha institucional', 'Conheça a Prefeitura de Juína e os serviços disponíveis para a população.', 'publicado', ARRAY['destaque','topo','cards','rodape'], now(), now() + interval '90 days'
 FROM sponsors s WHERE s.nome = 'Prefeitura de Juína'
 AND NOT EXISTS (SELECT 1 FROM campanhas WHERE titulo = 'Campanha institucional');
 

@@ -150,6 +150,7 @@ export function CampanhasAdmin() {
               <th className="px-4 py-3 font-semibold">Empresa</th>
               <th className="px-4 py-3 font-semibold">Status</th>
               <th className="px-4 py-3 font-semibold">Período</th>
+              <th className="px-4 py-3 font-semibold">Posições</th>
               <th className="px-4 py-3 font-semibold">Mídia</th>
               <th className="px-4 py-3 font-semibold">Desempenho</th>
               <th className="px-4 py-3 font-semibold text-right">Ações</th>
@@ -158,7 +159,7 @@ export function CampanhasAdmin() {
           <tbody className="divide-y divide-zinc-100">
             {campanhas.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-zinc-400">Nenhuma campanha cadastrada.</td>
+                <td colSpan={8} className="px-4 py-12 text-center text-zinc-400">Nenhuma campanha cadastrada.</td>
               </tr>
             )}
             {campanhas.map(c => {
@@ -177,6 +178,16 @@ export function CampanhasAdmin() {
                   </td>
                   <td className="px-4 py-3 text-xs text-zinc-500">
                     {dataCurta(c.startAt)} → {dataCurta(c.endAt)}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex max-w-[200px] flex-wrap gap-1">
+                      {(c.slots ?? []).length === 0 && <span className="text-xs text-zinc-400">—</span>}
+                      {(c.slots ?? []).map(s => (
+                        <span key={s} className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                          {s.replace(/_/g, ' ')}
+                        </span>
+                      ))}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">

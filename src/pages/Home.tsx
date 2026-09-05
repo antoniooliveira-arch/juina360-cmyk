@@ -3,13 +3,16 @@ import { useApp } from '@/context/AppContext';
 import { NoticiaCard } from '@/components/noticias/NoticiaCard';
 import { PatrocinadoresDestaque } from '@/components/patrocinadores/PatrocinadoresDestaque';
 import { CampanhasBanner } from '@/components/campanhas/CampanhasBanner';
+import { AdSlotTopo } from '@/components/slots/AdSlotTopo';
+import { AdLateral } from '@/components/slots/AdLateral';
+import { AdGrid } from '@/components/slots/AdGrid';
 import { Reveal } from '@/components/Reveal';
 import { Newspaper, Flame } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export function Home() {
-  const { noticias, patrocinadores, campanhasPublicas } = useApp();
+  const { noticias, patrocinadores, campanhasPorSlot } = useApp();
   const publicadas = noticias.filter(n => n.status === 'publicado');
   const destaque = publicadas.find(n => n.destaque) ?? publicadas[0];
   const demais = publicadas.filter(n => n.id !== destaque?.id);
@@ -18,6 +21,8 @@ export function Home() {
     const db = b.dataPublicacao ?? b.dataCriacao;
     return new Date(db).getTime() - new Date(da).getTime();
   }).slice(0, 6);
+
+  const destaquesCampanha = campanhasPorSlot.destaque;
 
   const dataHero = destaque ? (destaque.dataPublicacao ?? destaque.dataCriacao) : null;
   const legenda = (d: Date | string | undefined | null) => {
@@ -54,14 +59,21 @@ export function Home() {
         </div>
       </div>
 
-      {(campanhasPublicas.length > 0 || patrocinadores.length > 0) && (
-        campanhasPublicas.length > 0
-          ? <CampanhasBanner campanhas={campanhasPublicas} />
-          : <PatrocinadoresDestaque />
+      <AdSlotTopo campanhas={campanhasPorSlot.topo} />
+
+      {destaquesCampanha.length > 0 ? (
+        <CampanhasBanner campanhas={destaquesCampanha} />
+      ) : (
+        patrocinadores.length > 0 && <PatrocinadoresDestaque />
       )}
 
       <div className="mx-auto max-w-7xl px-4 py-6">
-        {destaque ? (
+        <div className="grid gap-6 xl:grid-cols-[16rem_minmax(0,1fr)_16rem]">
+          <div className="hidden xl:block">
+            <AdLateral campanhas={campanhasPorSlot.lateral_esquerda} lado="esquerda" />
+          </div>
+
+          <div>{destaque ? (
           <>
             <Reveal>
               <Link to={`/noticia/${destaque.slug}`} className="group relative block overflow-hidden rounded-3xl">
@@ -112,6 +124,8 @@ export function Home() {
               ))}
             </div>
 
+            <AdGrid campanhas={campanhasPorSlot.cards} />
+
             {demais.length > 3 && (
               <div className="mt-12 mb-5">
                 <h2 className="title-accent font-display flex items-center gap-3 text-2xl font-extrabold text-slate-900">
@@ -137,7 +151,12 @@ export function Home() {
               <p className="mt-1 text-sm text-zinc-500">Aguarde as primeiras publicações do JUINA360º.</p>
             </div>
           </Reveal>
-        )}
+        )}</div>
+
+          <div className="hidden xl:block">
+            <AdLateral campanhas={campanhasPorSlot.lateral_direita} lado="direita" />
+          </div>
+        </div>
       </div>
     </div>
   );
