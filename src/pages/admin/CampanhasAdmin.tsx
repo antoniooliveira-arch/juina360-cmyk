@@ -30,6 +30,7 @@ export function CampanhasAdmin() {
 
   const pendentes = campanhas.filter(c => c.status === 'pendente').length;
   const publicadas = campanhas.filter(c => c.status === 'publicado').length;
+  const expiradas = campanhas.filter(c => c.status === 'expirado').length;
 
   const agora = Date.now();
   const ativasNaPosicao = (slotId: SlotId) =>
@@ -137,14 +138,18 @@ export function CampanhasAdmin() {
         </div>
       )}
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-3">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-2xl border border-zinc-200 bg-white p-4">
           <div className="text-3xl font-black text-amber-600">{pendentes}</div>
-          <div className="text-sm text-zinc-500">Aguardando análise</div>
+          <div className="text-sm text-zinc-500">Em análise</div>
         </div>
         <div className="rounded-2xl border border-zinc-200 bg-white p-4">
           <div className="text-3xl font-black text-emerald-600">{publicadas}</div>
-          <div className="text-sm text-zinc-500">Publicadas</div>
+          <div className="text-sm text-zinc-500">Publicadas agora</div>
+        </div>
+        <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+          <div className="text-3xl font-black text-zinc-500">{expiradas}</div>
+          <div className="text-sm text-zinc-500">Expiradas</div>
         </div>
         <div className="rounded-2xl border border-zinc-200 bg-white p-4">
           <div className="text-3xl font-black text-slate-900">{campanhas.length}</div>

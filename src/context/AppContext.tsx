@@ -72,6 +72,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [campanhas, setCampanhas] = useState<Campanha[]>([]);
   const [adSlots, setAdSlots] = useState<AdSlot[]>(api.AD_SLOTS);
+
+  const expirarAutomaticamente = useCallback(async () => {
+    const agora = Date.now();
+    const vencidas = campanhas.filter(c => c.status === 'publicado' && c.endAt && new Date(c.endAt).getTime() < agora);
+    if (vencidas.length === 0) return;
+    for (const c of vencidas) {
+      try {
+        await api.updateCampanha(c.id, { status: 'expirado' });
+      } catch (e) {
+        console.warn('Falha ao expirar campanha:', e);
+      }
+    }
+    setCampanhas(prev => prev.map(c => (c.status === 'publicado' && c.endAt && new Date(c.endAt).getTime() < agora ? { ...c, status: 'expirado' } : c)));
+  }, [campanhas]);
+
+  useEffect(() => {
+    expirarAutomaticamente();
+    const t = setInterval(expirarAutomaticamente, 60000);
+    return () => clearInterval(t);
+  }, [expirarAutomaticamente]);
   const [currentUser, setCurrentUser] = useState<Usuario | null>(null);
   const [loading, setLoading] = useState(true);
 
