@@ -104,3 +104,44 @@ INSERT INTO patrocinadores (nome, url, ativo) VALUES
   ('Prefeitura de Juína', 'https://www.juina.mt.gov.br', true),
   ('Câmara Municipal', NULL, true)
 ON CONFLICT DO NOTHING;
+
+-- ===================== ACESSO (chave anônima) =====================
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO anon, authenticated;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;
+
+-- RLS permissivo para o portal (desenvolvimento)
+ALTER TABLE categorias ENABLE ROW LEVEL SECURITY;
+ALTER TABLE noticias ENABLE ROW LEVEL SECURITY;
+ALTER TABLE patrocinadores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS juina360_all_categorias ON categorias;
+CREATE POLICY juina360_all_categorias ON categorias FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS juina360_all_noticias ON noticias;
+CREATE POLICY juina360_all_noticias ON noticias FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS juina360_all_patrocinadores ON patrocinadores;
+CREATE POLICY juina360_all_patrocinadores ON patrocinadores FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS juina360_all_usuarios ON usuarios;
+CREATE POLICY juina360_all_usuarios ON usuarios FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+
+-- ===================== STORAGE (upload de mídia) =====================
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES ('midias', 'midias', true, 52428800, NULL)
+ON CONFLICT (id) DO NOTHING;
+
+DROP POLICY IF EXISTS juina360_anon_insert ON storage.objects;
+CREATE POLICY juina360_anon_insert ON storage.objects FOR INSERT TO anon WITH CHECK (bucket_id = 'midias');
+
+DROP POLICY IF EXISTS juina360_anon_update ON storage.objects;
+CREATE POLICY juina360_anon_update ON storage.objects FOR UPDATE TO anon USING (bucket_id = 'midias');
+
+DROP POLICY IF EXISTS juina360_anon_delete ON storage.objects;
+CREATE POLICY juina360_anon_delete ON storage.objects FOR DELETE TO anon USING (bucket_id = 'midias');
