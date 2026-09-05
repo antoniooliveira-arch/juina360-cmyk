@@ -1,6 +1,6 @@
 import { Link, NavLink } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { LogIn, Menu, X, LayoutDashboard, Globe, Newspaper, Mail, ArrowRight } from 'lucide-react';
+import { LogIn, Menu, X, LayoutDashboard, Globe, Newspaper, Mail, ArrowRight, Megaphone } from 'lucide-react';
 import { AdRodape } from '@/components/slots/AdRodape';
 import { useState } from 'react';
 
@@ -63,6 +63,18 @@ export function Header() {
                 {cat.nome}
               </NavLink>
             ))}
+            <NavLink
+              to="/anuncie"
+              className={({ isActive }) =>
+                `flex items-center gap-1 rounded-md px-3 py-2 text-sm font-bold transition ${
+                  isActive
+                    ? 'text-amber-600'
+                    : 'text-amber-600/80 hover:bg-amber-50 hover:text-amber-600'
+                }`
+              }
+            >
+              <Megaphone className="h-4 w-4" /> Anuncie
+            </NavLink>
           </nav>
           <div className="hidden items-center gap-2 lg:flex">
             {isAuthenticated ? (
@@ -101,6 +113,13 @@ export function Header() {
                   {cat.nome}
                 </Link>
               ))}
+              <Link
+                to="/anuncie"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-bold text-amber-600 hover:bg-amber-50"
+              >
+                <Megaphone className="h-4 w-4" /> Anuncie conosco
+              </Link>
               <Link
                 to={isAuthenticated ? destinoPainel : '/login'}
                 onClick={() => setOpen(false)}
@@ -165,6 +184,9 @@ export function Footer() {
             <p className="mt-2 text-sm text-zinc-500">
               Um jornalismo local, ágil e conectado com a cidade.
             </p>
+            <Link to="/anuncie" className="mt-4 flex w-fit items-center gap-1.5 rounded-lg bg-amber-500/15 px-3 py-2 text-sm font-bold text-amber-400 transition hover:bg-amber-500 hover:text-slate-900">
+              <Megaphone className="h-4 w-4" /> Anuncie no JUINA360º <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
         </div>
         <div className="border-t border-white/10 py-5 text-center text-xs text-zinc-500">

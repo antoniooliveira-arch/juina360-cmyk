@@ -8,6 +8,7 @@ import { Home } from '@/pages/Home';
 import { Categoria } from '@/pages/Categoria';
 import { Noticia } from '@/pages/Noticia';
 import { Login } from '@/pages/Login';
+import { Anuncie } from '@/pages/Anuncie';
 import { DashboardAdmin } from '@/pages/admin/DashboardAdmin';
 import { NoticiasAdmin } from '@/pages/admin/NoticiasAdmin';
 import { CategoriasAdmin } from '@/pages/admin/CategoriasAdmin';
@@ -33,6 +34,7 @@ function AppRoutes() {
       <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
       <Route path="/categoria/:slug" element={<PublicLayout><Categoria /></PublicLayout>} />
       <Route path="/noticia/:slug" element={<PublicLayout><Noticia /></PublicLayout>} />
+      <Route path="/anuncie" element={<PublicLayout><Anuncie /></PublicLayout>} />
 
       <Route path="/painel" element={<ProtectedRoute><PatrocinadorPainel /></ProtectedRoute>} />
 
