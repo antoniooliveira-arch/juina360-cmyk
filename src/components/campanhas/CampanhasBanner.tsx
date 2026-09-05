@@ -1,14 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Campanha } from '@/types';
 import {
-  Award, ChevronLeft, ChevronRight, Play, Megaphone, ExternalLink, Eye, MousePointerClick,
+  Award, ChevronLeft, ChevronRight, Play, Megaphone, ExternalLink, Eye, MousePointerClick, QrCode as QrIcon, X,
 } from 'lucide-react';
 import { registrarVisualizacaoCampanha, registrarCliqueCampanha } from '@/lib/supabaseService';
+import { QrCode } from '@/components/qr/QrCode';
 
 export function CampanhasBanner({ campanhas }: { campanhas: Campanha[] }) {
   const [indice, setIndice] = useState(0);
   const [pausado, setPausado] = useState(false);
   const [tocando, setTocando] = useState(false);
+  const [verQr, setVerQr] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const vistasRef = useRef<Set<string>>(new Set());
 
@@ -63,6 +65,8 @@ export function CampanhasBanner({ campanhas }: { campanhas: Campanha[] }) {
   const aoClicar = (c: Campanha) => {
     registrarCliqueCampanha(c.id).catch(() => {});
   };
+
+  const valorQr = atual.linkUrl || (typeof window !== 'undefined' ? window.location.href : '');
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 pt-4">
@@ -145,6 +149,14 @@ export function CampanhasBanner({ campanhas }: { campanhas: Campanha[] }) {
                       )}
                     </button>
                   )}
+
+                  <button
+                    onClick={() => setVerQr(true)}
+                    className="flex items-center gap-2 rounded-2xl bg-black/45 px-4 py-3 text-sm font-bold text-white shadow-lg backdrop-blur transition hover:bg-black/60"
+                  >
+                    <QrIcon className="h-4 w-4" />
+                    <span>QR Code</span>
+                  </button>
                 </div>
               </>
             );
@@ -175,6 +187,32 @@ export function CampanhasBanner({ campanhas }: { campanhas: Campanha[] }) {
 
       {musica && (
         <audio key={`${atual.id}-${indice}`} ref={audioRef} src={musica.url} loop preload="auto" className="hidden" />
+      )}
+
+      {verQr && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm" onClick={() => setVerQr(false)}>
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 text-center shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between">
+              <h3 className="flex items-center gap-2 font-display text-lg font-extrabold text-slate-900">
+                <QrIcon className="h-5 w-5 text-amber-500" /> QR Code
+              </h3>
+              <button onClick={() => setVerQr(false)} className="rounded-full p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-1 text-sm text-zinc-500">
+              Aponte a câmera do celular para abrir
+              {atual.linkUrl ? ' a página do anunciante' : ' esta matéria'} diretamente.
+            </p>
+            <div className="mt-4 flex justify-center">
+              <div className="rounded-3xl border-4 border-zinc-100 p-2">
+                <QrCode value={valorQr} size={200} />
+              </div>
+            </div>
+            <p className="mt-3 truncate text-xs font-medium text-zinc-500">{valorQr}</p>
+            <p className="mt-1 text-[10px] uppercase tracking-widest text-zinc-400">Patrocinado por {atual.sponsorNome ?? atual.titulo}</p>
+          </div>
+        </div>
       )}
     </section>
   );
