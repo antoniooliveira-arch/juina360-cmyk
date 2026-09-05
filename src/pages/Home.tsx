@@ -8,7 +8,7 @@ import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export function Home() {
-  const { noticias } = useApp();
+  const { noticias, patrocinadores } = useApp();
   const publicadas = noticias.filter(n => n.status === 'publicado');
   const destaque = publicadas.find(n => n.destaque) ?? publicadas[0];
   const demais = publicadas.filter(n => n.id !== destaque?.id);
@@ -53,7 +53,7 @@ export function Home() {
         </div>
       </div>
 
-      {noticias.length > 0 && <PatrocinadoresDestaque />}
+      {patrocinadores.length > 0 && <PatrocinadoresDestaque />}
 
       <div className="mx-auto max-w-7xl px-4 py-6">
         {destaque ? (
